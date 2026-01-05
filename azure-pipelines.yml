@@ -4,7 +4,7 @@ trigger:
       - main
 
 pool:
-  vmImage: ubuntu-latest
+  name: self-hosted-windows
 
 steps:
   - checkout: self
@@ -13,15 +13,14 @@ steps:
     inputs:
       versionSpec: "3.11"
 
-  - script: |
+  - powershell: |
       python -m pip install --upgrade pip
       pip install awscli aws-sam-cli
       aws --version
       sam --version
     displayName: "Install AWS CLI + SAM CLI"
 
-  - script: |
-      set -e
+  - powershell: |
       sam build
     displayName: "SAM Build"
     env:
@@ -30,13 +29,12 @@ steps:
       AWS_SESSION_TOKEN: $(AWS_SESSION_TOKEN)
       AWS_DEFAULT_REGION: $(AWS_REGION)
 
-  - script: |
-      set -e
-      sam deploy \
-        --stack-name "$(SAM_STACK_NAME)" \
-        --region "$(AWS_REGION)" \
-        --s3-bucket "$(SAM_S3_BUCKET)" \
-        --capabilities CAPABILITY_IAM \
+  - powershell: |
+      sam deploy `
+        --stack-name "$(SAM_STACK_NAME)" `
+        --region "$(AWS_REGION)" `
+        --s3-bucket "$(SAM_S3_BUCKET)" `
+        --capabilities CAPABILITY_IAM `
         --no-fail-on-empty-changeset
     displayName: "SAM Deploy"
     env:
@@ -44,3 +42,4 @@ steps:
       AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
       AWS_SESSION_TOKEN: $(AWS_SESSION_TOKEN)
       AWS_DEFAULT_REGION: $(AWS_REGION)
+
