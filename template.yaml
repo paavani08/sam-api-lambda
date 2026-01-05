@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: API Gateway + Lambda via SAM
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      EndpointConfiguration: REGIONAL
+
+  HelloFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: app.handler
+      Events:
+        HelloApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /hello
+            Method: GET
+
+Outputs:
+  ApiUrl:
+    Description: Invoke URL
+    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/prod/hello"
