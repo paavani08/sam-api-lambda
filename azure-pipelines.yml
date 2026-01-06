@@ -12,17 +12,23 @@ steps:
   - powershell: |
       $ErrorActionPreference = "Stop"
 
-      py -3.11 --version
-      py -3.11 -m pip install --upgrade pip
-      py -3.11 -m pip install awscli aws-sam-cli
+      $py = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311\python.exe"
+      $scripts = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311\Scripts"
+      $aws = Join-Path $scripts "aws.exe"
+      $sam = Join-Path $scripts "sam.cmd"
 
-      aws --version
-      sam --version
+      & $py --version
+      & $py -m pip install --upgrade pip
+      & $py -m pip install awscli aws-sam-cli
+
+      & $aws --version
+      & $sam --version
     displayName: "Install AWS CLI + SAM CLI (Python 3.11)"
 
   - powershell: |
       $ErrorActionPreference = "Stop"
-      py -3.11 -m sam build
+      $sam = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311\Scripts\sam.cmd"
+      & $sam build
     displayName: "SAM Build"
     env:
       AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
@@ -31,7 +37,8 @@ steps:
 
   - powershell: |
       $ErrorActionPreference = "Stop"
-      py -3.11 -m sam deploy `
+      $sam = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311\Scripts\sam.cmd"
+      & $sam deploy `
         --stack-name "$(SAM_STACK_NAME)" `
         --region "$(AWS_REGION)" `
         --s3-bucket "$(SAM_S3_BUCKET)" `
@@ -42,4 +49,3 @@ steps:
       AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
       AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
       AWS_DEFAULT_REGION: $(AWS_REGION)
-
