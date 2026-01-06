@@ -1,34 +1,47 @@
-AWSTemplateFormatVersion: "2010-09-09"
-Transform: AWS::Serverless-2016-10-31
-Description: API Gateway + Lambda via SAM
+trigger:
+  branches:
+    include:
+      - main
 
-Globals:
-  Function:
-    Runtime: python3.11
-    Timeout: 10
-    MemorySize: 128
+pool:
+  name: self-hosted-windows
 
-Resources:
-  Api:
-    Type: AWS::Serverless::Api
-    Properties:
-      StageName: prod
-      EndpointConfiguration: REGIONAL
+steps:
+  - checkout: self
 
-  HelloFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/
-      Handler: app.handler
-      Events:
-        HelloApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref Api
-            Path: /hello
-            Method: GET
+  - powershell: |
+      $ErrorActionPreference = "Stop"
 
-Outputs:
-  ApiUrl:
-    Description: Invoke URL
-    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/prod/hello"
+      # Prefer Windows Python Launcher to avoid PATH issues
+      py -V
+
+      py -3 -m pip install --upgrade pip
+      py -3 -m pip install awscli aws-sam-cli
+
+      aws --version
+      sam --version
+    displayName: "Install AWS CLI + SAM CLI"
+
+  - powershell: |
+      $ErrorActionPreference = "Stop"
+      sam build
+    displayName: "SAM Build"
+    env:
+      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+      AWS_DEFAULT_REGION: $(AWS_REGION)
+
+  - powershell: |
+      $ErrorActionPreference = "Stop"
+      sam deploy `
+        --stack-name "$(SAM_STACK_NAME)" `
+        --region "$(AWS_REGION)" `
+        --s3-bucket "$(SAM_S3_BUCKET)" `
+        --capabilities CAPABILITY_IAM `
+        --no-fail-on-empty-changeset
+    displayName: "SAM Deploy"
+    env:
+      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+      AWS_DEFAULT_REGION: $(AWS_REGION)
+
