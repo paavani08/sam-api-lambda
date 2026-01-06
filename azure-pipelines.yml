@@ -10,14 +10,16 @@ steps:
   - checkout: self
 
   - powershell: |
-      python --version
-      python -m pip install --upgrade pip
-      pip install awscli aws-sam-cli
+      $ErrorActionPreference = "Stop"
+      py -V
+      py -3 -m pip install --upgrade pip
+      py -3 -m pip install awscli aws-sam-cli
       aws --version
       sam --version
     displayName: "Install AWS CLI + SAM CLI"
 
   - powershell: |
+      $ErrorActionPreference = "Stop"
       sam build
     displayName: "SAM Build"
     env:
@@ -27,6 +29,7 @@ steps:
       AWS_DEFAULT_REGION: $(AWS_REGION)
 
   - powershell: |
+      $ErrorActionPreference = "Stop"
       sam deploy `
         --stack-name "$(SAM_STACK_NAME)" `
         --region "$(AWS_REGION)" `
