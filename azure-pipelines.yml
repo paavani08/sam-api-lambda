@@ -12,24 +12,29 @@ steps:
   - powershell: |
       $ErrorActionPreference = "Stop"
 
-      $py = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311\python.exe"
-      $scripts = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311\Scripts"
+      # Python 3.11 locations (adjust only if your Python 3.11 is elsewhere)
+      $pyHome = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311"
+      $pyExe  = Join-Path $pyHome "python.exe"
+      $scripts = Join-Path $pyHome "Scripts"
 
-      if (!(Test-Path $py)) { throw "Python 3.11 not found at $py" }
-      if (!(Test-Path $scripts)) { throw "Python Scripts folder not found at $scripts" }
+      if (!(Test-Path $pyExe)) { throw "Python 3.11 not found at $pyExe" }
+      if (!(Test-Path $scripts)) { throw "Python 3.11 Scripts folder not found at $scripts" }
 
-      & $py --version
-      & $py -m pip install --upgrade pip
-      & $py -m pip install awscli aws-sam-cli
+      # Ensure python points to 3.11 for this step
+      $env:PATH = "$pyHome;$scripts;$env:PATH"
 
-      # Detect AWS CLI launcher (aws.cmd or aws.exe)
+      python --version
+      python -m pip install --upgrade pip
+      python -m pip install awscli aws-sam-cli
+
+      # Detect AWS launcher (aws.cmd or aws.exe)
       $awsCmd = Join-Path $scripts "aws.cmd"
       $awsExe = Join-Path $scripts "aws.exe"
       if (Test-Path $awsCmd) { $aws = $awsCmd }
       elseif (Test-Path $awsExe) { $aws = $awsExe }
       else { throw "AWS CLI launcher not found in $scripts (expected aws.cmd or aws.exe)" }
 
-      # Detect SAM CLI launcher (sam.cmd or sam.exe)
+      # Detect SAM launcher (sam.cmd or sam.exe)
       $samCmd = Join-Path $scripts "sam.cmd"
       $samExe = Join-Path $scripts "sam.exe"
       if (Test-Path $samCmd) { $sam = $samCmd }
@@ -42,13 +47,19 @@ steps:
 
   - powershell: |
       $ErrorActionPreference = "Stop"
-      $scripts = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311\Scripts"
+
+      $pyHome = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311"
+      $scripts = Join-Path $pyHome "Scripts"
+      $env:PATH = "$pyHome;$scripts;$env:PATH"
+
+      python --version
+
+      # Detect SAM launcher again
       $samCmd = Join-Path $scripts "sam.cmd"
       $samExe = Join-Path $scripts "sam.exe"
-      if (Test-Path $samCmd) { $sam = $samCmd } else { $sam = $samExe }
-      if (!(Test-Path $sam)) { throw "SAM launcher not found in $scripts" }
+      if (Test-Path $samCmd) { $sam = $samCmd } elseif (Test-Path $samExe) { $sam = $samExe } else { throw "SAM launcher not found in $scripts" }
 
-      & $sam build
+      & $sam build -t template.yaml
     displayName: "SAM Build"
     env:
       AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
@@ -57,13 +68,19 @@ steps:
 
   - powershell: |
       $ErrorActionPreference = "Stop"
-      $scripts = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311\Scripts"
+
+      $pyHome = "C:\Users\WINDOWS 11\AppData\Local\Programs\Python\Python311"
+      $scripts = Join-Path $pyHome "Scripts"
+      $env:PATH = "$pyHome;$scripts;$env:PATH"
+
+      python --version
+
+      # Detect SAM launcher again
       $samCmd = Join-Path $scripts "sam.cmd"
       $samExe = Join-Path $scripts "sam.exe"
-      if (Test-Path $samCmd) { $sam = $samCmd } else { $sam = $samExe }
-      if (!(Test-Path $sam)) { throw "SAM launcher not found in $scripts" }
+      if (Test-Path $samCmd) { $sam = $samCmd } elseif (Test-Path $samExe) { $sam = $samExe } else { throw "SAM launcher not found in $scripts" }
 
-      & $sam deploy `
+      & $sam deploy -t template.yaml `
         --stack-name "$(SAM_STACK_NAME)" `
         --region "$(AWS_REGION)" `
         --s3-bucket "$(SAM_S3_BUCKET)" `
