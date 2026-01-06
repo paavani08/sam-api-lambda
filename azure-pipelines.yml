@@ -3,34 +3,45 @@ trigger:
     include:
       - main
 
+# Use your self-hosted Windows agent
 pool:
   name: self-hosted-windows
 
 steps:
   - checkout: self
 
+  # Install AWS CLI + SAM CLI using Python 3.11 explicitly
   - powershell: |
       $ErrorActionPreference = "Stop"
-      py -V
-      py -3 -m pip install --upgrade pip
-      py -3 -m pip install awscli aws-sam-cli
-      aws --version
-      sam --version
-    displayName: "Install AWS CLI + SAM CLI"
 
+      # Verify Python 3.11 exists
+      py -3.11 --version
+
+      # Upgrade pip for Python 3.11
+      py -3.11 -m pip install --upgrade pip
+
+      # Install AWS CLI and SAM CLI with Python 3.11
+      py -3.11 -m pip install awscli aws-sam-cli
+
+      # Verify tools
+      py -3.11 -m aws --version
+      py -3.11 -m sam --version
+    displayName: "Install AWS CLI + SAM CLI (Python 3.11)"
+
+  # Build the SAM application
   - powershell: |
       $ErrorActionPreference = "Stop"
-      sam build
+      py -3.11 -m sam build
     displayName: "SAM Build"
     env:
       AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
       AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-      AWS_SESSION_TOKEN: $(AWS_SESSION_TOKEN)
       AWS_DEFAULT_REGION: $(AWS_REGION)
 
+  # Deploy the SAM application
   - powershell: |
       $ErrorActionPreference = "Stop"
-      sam deploy `
+      py -3.11 -m sam deploy `
         --stack-name "$(SAM_STACK_NAME)" `
         --region "$(AWS_REGION)" `
         --s3-bucket "$(SAM_S3_BUCKET)" `
@@ -40,5 +51,4 @@ steps:
     env:
       AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
       AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-      AWS_SESSION_TOKEN: $(AWS_SESSION_TOKEN)
       AWS_DEFAULT_REGION: $(AWS_REGION)
