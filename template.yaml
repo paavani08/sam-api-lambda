@@ -1,4 +1,3 @@
-
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Simple API Gateway + Lambda (SAM)
@@ -7,6 +6,7 @@ Globals:
   Function:
     Runtime: python3.11
     Timeout: 10
+    MemorySize: 128
 
 Resources:
   HelloFunction:
@@ -22,7 +22,43 @@ Resources:
             Method: GET
 
 Outputs:
-  ApiUrl:
-    Description: API Gateway endpoint URL
+  # API outputs
+  ApiId:
+    Description: API Gateway REST API ID
+    Value: !Ref ServerlessRestApi
+
+  ApiStageName:
+    Description: API Gateway stage name
+    Value: Prod
+
+  ApiBaseUrl:
+    Description: Base URL of API Gateway stage
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+
+  HelloEndpointUrl:
+    Description: Full Hello endpoint URL
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello"
+
+  # Lambda outputs
+  LambdaFunctionName:
+    Description: Lambda function name
+    Value: !Ref HelloFunction
+
+  LambdaFunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt HelloFunction.Arn
+
+  LambdaLogGroupName:
+    Description: CloudWatch Log Group for the Lambda (created on first invoke)
+    Value: !Sub "/aws/lambda/${HelloFunction}"
+
+  # General outputs
+  Region:
+    Description: AWS Region
+    Value: !Ref AWS::Region
+
+  StackName:
+    Description: CloudFormation stack name
+    Value: !Ref AWS::StackName
+
 
